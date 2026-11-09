@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>הוספת מקום</title>
+  <style>
+    body { margin: 0; font-family: Arial, sans-serif; background: #f5f5f5; }
+    h1 { margin: 0; padding: 12px; background: #2e7d32; color: white; font-size: 22px; }
+    form { max-width: 500px; margin: 20px auto; background: white; padding: 20px; border-radius: 10px; }
+    label { display: block; margin-top: 12px; font-weight: bold; }
+    input, select, textarea { width: 100%; padding: 8px; margin-top: 4px; box-sizing: border-box;
+                              border: 1px solid #ccc; border-radius: 6px; font-size: 15px; }
+    button { margin-top: 18px; width: 100%; padding: 10px; background: #2e7d32; color: white;
+             border: none; border-radius: 6px; font-size: 16px; cursor: pointer; }
+    .error { background: #fdecea; color: #b71c1c; padding: 10px; border-radius: 6px; }
+    .hint { font-size: 13px; color: #666; margin-top: 4px; }
+    a.back { display: block; text-align: center; margin-top: 12px; }
+  </style>
+</head>
+<body>
+  <h1>הוספת מקום 📍</h1>
+
+  <form method="POST">
+    {% if error %}<div class="error">{{ error }}</div>{% endif %}
+
+    <label>שם המקום *</label>
+    <input name="name" required>
+
+    <label>סוג</label>
+    <select name="type">
+      <option>מעיין</option>
+      <option>מסלול</option>
+      <option>תצפית</option>
+      <option>נחל</option>
+      <option>אחר</option>
+    </select>
+
+    <label>מיקום *</label>
+    <input name="location" required placeholder="32.123, 35.456 או קישור מגוגל מפות">
+    <div class="hint">בגוגל מפות: קליק ימני על המקום ולחיצה על המספרים שמופיעים</div>
+
+    <label>תיאור</label>
+    <textarea name="description" rows="3"></textarea>
+
+    <label>קישור לאינסטגרם</label>
+    <input name="instagram" type="url">
+
+    <label>חניה</label>
+    <select name="parking">
+      <option value="">לא ידוע</option>
+      <option>יש</option>
+      <option>אין</option>
+    </select>
+
+    <label>עומס</label>
+    <select name="crowded">
+      <option value="">לא ידוע</option>
+      <option>שקט</option>
+      <option>בינוני</option>
+      <option>עמוס</option>
+    </select>
+
+    <label>דקות הליכה מהחניה</label>
+    <input name="walk_minutes" type="number" min="0">
+
+    <button type="submit">שמירה</button>
+    <a class="back" href="/">חזרה למפה</a>
+  </form>
+</body>
+</html>
