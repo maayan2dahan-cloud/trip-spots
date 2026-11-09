@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% if editing %}עריכת מקום{% else %}הוספת מקום{% endif %}</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header class="topbar">
+    <a href="/" class="logo">🌿 טיולים <span>וטבע</span> בארץ</a>
+    <a href="/" class="btn btn-ghost">חזרה למפה</a>
+  </header>
+
+  <form class="form-card" method="POST" enctype="multipart/form-data">
+    <h2>{% if editing %}עריכת מקום{% else %}מקום חדש{% endif %}</h2>
+    <p class="form-sub">
+      {% if editing %}עדכני פרטים או הוסיפי תמונה{% else %}שמרי מקום שמצאת, כדי שיחכה לך לטיול הבא{% endif %}
+    </p>
+
+    {% if error %}<div class="error">{{ error }}</div>{% endif %}
+
+    <div class="field">
+      <label>שם המקום *</label>
+      <input name="name" required value="{{ place.name or '' }}">
+    </div>
+
+    <div class="row">
+      <div class="field">
+        <label>סוג</label>
+        <select name="type">
+          {% for t in types %}
+            <option {% if place.type == t %}selected{% endif %}>{{ t }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label>ביקרתי שם?</label>
+        <select name="visited">
+          {% for value, text in [("ביקרתי", "✅ ביקרתי"), ("אינסטגרם", "📱 ראיתי באינסטגרם")] %}
+            <option value="{{ value }}" {% if place.visited == value %}selected{% endif %}>{{ text }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>מיקום *</label>
+      <input name="location" required value="{{ place.location or '' }}"
+             placeholder="32.123, 35.456 או קישור מגוגל מפות">
+      <div class="hint">בגוגל מפות: קליק ימני על המקום ולחיצה על המספרים שמופיעים</div>
+    </div>
+
+    <div class="field">
+      <label>תיאור</label>
+      <textarea name="description" rows="3">{{ place.description or '' }}</textarea>
+    </div>
+
+    <div class="field">
+      <label>תמונה</label>
+      {% if place.image %}
+        <img class="current-img" src="/static/uploads/{{ place.image }}">
+        <div class="hint">אפשר לבחור תמונה חדשה כדי להחליף את הקיימת</div>
+      {% endif %}
+      <input name="image" type="file" accept="image/*">
+    </div>
+
+    <div class="field">
+      <label>קישור לאינסטגרם</label>
+      <input name="instagram" type="url" value="{{ place.instagram or '' }}">
+    </div>
+
+    <div class="row">
+      <div class="field">
+        <label>חניה</label>
+        <select name="parking">
+          {% for value, text in [("", "לא ידוע"), ("יש", "יש"), ("אין", "אין")] %}
+            <option value="{{ value }}" {% if (place.parking or '') == value %}selected{% endif %}>{{ text }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label>עומס</label>
+        <select name="crowded">
+          {% for value, text in [("", "לא ידוע"), ("שקט", "שקט"), ("בינוני", "בינוני"), ("עמוס", "עמוס")] %}
+            <option value="{{ value }}" {% if (place.crowded or '') == value %}selected{% endif %}>{{ text }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>דקות הליכה מהחניה</label>
+      <input name="walk_minutes" type="number" min="0"
+             value="{{ place.walk_minutes if place.walk_minutes is not none else '' }}">
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn">{% if editing %}שמירת שינויים{% else %}שמירה{% endif %}</button>
+      <a href="/" class="btn btn-ghost">ביטול</a>
+    </div>
+  </form>
+</body>
+</html>

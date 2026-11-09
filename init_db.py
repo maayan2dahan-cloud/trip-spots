@@ -1,11 +1,11 @@
 import csv
 import sqlite3
 
-# חיבור למסד הנתונים (אם הקובץ לא קיים, הוא נוצר)
+# ⚠️ זהירות: הסקריפט מוחק את כל המקומות ובונה מחדש מה-CSV!
+
 conn = sqlite3.connect("places.db")
 cur = conn.cursor()
 
-# יצירת הטבלה (מוחקים קודם טבלה ישנה אם יש)
 cur.execute("DROP TABLE IF EXISTS places")
 cur.execute("""
 CREATE TABLE places (
@@ -18,25 +18,27 @@ CREATE TABLE places (
     instagram TEXT,
     parking TEXT,
     crowded TEXT,
-    walk_minutes INTEGER
+    walk_minutes INTEGER,
+    image TEXT,
+    visited TEXT
 )
 """)
 
-# קריאת ה-CSV והכנסת כל שורה לטבלה
 with open("places.csv", encoding="utf-8-sig") as f:
     reader = csv.DictReader(f)
     for row in reader:
         cur.execute("""
-            INSERT INTO places (name, type, lat, lng, description, instagram, parking, crowded, walk_minutes)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO places (name, type, lat, lng, description, instagram, parking, crowded, walk_minutes, visited)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             row["name"], row["type"],
             float(row["lat"]), float(row["lng"]),
             row["description"], row["instagram"],
             row["parking"], row["crowded"],
-            int(row["walk_minutes"]) if row["walk_minutes"] else None
+            int(row["walk_minutes"]) if row["walk_minutes"] else None,
+            row.get("visited") or "ביקרתי"
         ))
 
-conn.commit()   # שמירה
+conn.commit()
 conn.close()
 print("מסד הנתונים נוצר!")

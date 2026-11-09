@@ -4,23 +4,22 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>טיולים וטבע בארץ</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&display=swap">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <style>
-    .add-btn { float: left; color: white; background: rgba(255,255,255,0.2);
-           padding: 4px 12px; border-radius: 6px; text-decoration: none; font-size: 16px; }
-    body { margin: 0; font-family: Arial, sans-serif; }
-    h1 { margin: 0; padding: 12px; background: #2e7d32; color: white; font-size: 22px; }
-    #map { height: calc(100vh - 50px); }
-    .popup h3 { margin: 0 0 6px; }
-    .buttons a { display: inline-block; margin: 4px 0 0 6px; padding: 4px 8px;
-                 border-radius: 6px; color: white !important; text-decoration: none; }
-    .waze  { background: #33ccff; }
-    .gmaps { background: #4285f4; }
-    .insta { background: #d62976; }
-  </style>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-  <h1>טיולים וטבע בארץ 🌿 <a href="/add" class="add-btn">+ הוספת מקום</a></h1>
+  <header class="topbar">
+    <a href="/" class="logo">🌿 טיולים <span>וטבע</span> בארץ</a>
+    <a href="/add" class="btn">+ הוספת מקום</a>
+  </header>
+
+  <div class="filters">
+    <div class="chip-row" id="type-filters"></div>
+    <div class="chip-row" id="visited-filters"></div>
+    <div class="counter" id="counter"></div>
+  </div>
+
   <div id="map"></div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -28,41 +27,109 @@
     // המקומות מגיעים מפייתון
     const places = {{ places | tojson }};
 
-    // יצירת המפה, ממורכזת על ישראל
-    const map = L.map("map").setView([31.5, 35.0], 8);
-L.tileLayer("https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png", {
-  attribution: "© Stadia Maps © OpenMapTiles © OpenStreetMap",
-  maxZoom: 20
-}).addTo(map);
+    const EMOJI = { "מעיין": "💧", "תצפית": "🌄", "מסלול": "🥾", "נחל": "🏞️", "אחר": "📍" };
 
-    // סיכה לכל מקום
-places.forEach(p => {
-  const waze  = `https://waze.com/ul?ll=${p.lat},${p.lng}&navigate=yes`;
-  const gmaps = `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}`;
+    const TYPE_OPTIONS = [
+      ["הכול", "הכול"], ["מעיין", "💧 מעיינות"], ["תצפית", "🌄 תצפיות"],
+      ["מסלול", "🥾 מסלולים"], ["נחל", "🏞️ נחלים"], ["אחר", "📍 אחר"]
+    ];
+    const VISITED_OPTIONS = [
+      ["הכול", "הכול"], ["ביקרתי", "✅ ביקרתי"], ["אינסטגרם", "📱 עוד לא"]
+    ];
 
-  // מציגים רק שדות שיש בהם מידע
-  let info = "";
-  if (p.parking) info += `🚗 חניה: ${p.parking}<br>`;
-  if (p.crowded) info += `👥 עומס: ${p.crowded}<br>`;
-  if (p.walk_minutes !== null) {
-    info += p.walk_minutes === 0 ? "🥾 ממש ליד החניה" : `🥾 הליכה: ${p.walk_minutes} דק'`;
-  }
+    // הסינון הנוכחי
+    let typeFilter = "הכול";
+    let visitedFilter = "הכול";
 
-  let html = `
-    <div class="popup">
-      <h3>${p.name}</h3>
-      ${p.description ? `<p>${p.description}</p>` : ""}
-      <p>${info}</p>
-      <div class="buttons">
-        <a class="waze" href="${waze}" target="_blank">Waze</a>
-        <a class="gmaps" href="${gmaps}" target="_blank">Google Maps</a>`;
-  if (p.instagram) {
-    html += `<a class="insta" href="${p.instagram}" target="_blank">Instagram</a>`;
-  }
-  html += `</div></div>`;
+    // ---------- המפה ----------
+    const map = L.map("map", { zoomControl: false }).setView([31.5, 35.0], 8);
+    L.control.zoom({ position: "bottomleft" }).addTo(map);
+    L.tileLayer("https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png", {
+      attribution: "© Stadia Maps © OpenMapTiles © OpenStreetMap",
+      maxZoom: 20
+    }).addTo(map);
 
-  L.marker([p.lat, p.lng]).addTo(map).bindPopup(html);
-});
+    const markersLayer = L.layerGroup().addTo(map);
+
+    // ---------- חלון המידע ----------
+    function popupHtml(p) {
+      const waze  = `https://waze.com/ul?ll=${p.lat},${p.lng}&navigate=yes`;
+      const gmaps = `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}`;
+      const visited = p.visited === "ביקרתי";
+
+      let meta = `<span class="meta">${visited ? "✅ ביקרתי" : "📱 מהאינסטגרם"}</span>`;
+      if (p.parking) meta += `<span class="meta">🚗 חניה: ${p.parking}</span>`;
+      if (p.crowded) meta += `<span class="meta">👥 ${p.crowded}</span>`;
+      if (p.walk_minutes !== null) {
+        meta += `<span class="meta">🥾 ${p.walk_minutes === 0 ? "ליד החניה" : p.walk_minutes + " דק' הליכה"}</span>`;
+      }
+
+      return `
+        ${p.image ? `<img class="popup-img" src="/static/uploads/${p.image}">` : ""}
+        <div class="popup-body">
+          <span class="popup-tag">${EMOJI[p.type] || "📍"} ${p.type || "אחר"}</span>
+          <h3>${p.name}</h3>
+          ${p.description ? `<p class="popup-desc">${p.description}</p>` : ""}
+          <div class="popup-meta">${meta}</div>
+          <div class="popup-actions">
+            <a class="primary" href="${waze}" target="_blank">Waze</a>
+            <a href="${gmaps}" target="_blank">Google Maps</a>
+            ${p.instagram ? `<a href="${p.instagram}" target="_blank">Instagram</a>` : ""}
+            <a href="/edit/${p.id}">✏️ עריכה</a>
+          </div>
+        </div>`;
+    }
+
+    // ---------- סיכה ----------
+    function markerIcon(p) {
+      const visited = p.visited === "ביקרתי";
+      return L.divIcon({
+        className: "marker-wrap",
+        html: `<div class="marker ${visited ? "" : "not-visited"}">${EMOJI[p.type] || "📍"}</div>`,
+        iconSize: [38, 38],
+        iconAnchor: [19, 19],
+        popupAnchor: [0, -18]
+      });
+    }
+
+    // ---------- ציור הסיכות לפי הסינון ----------
+    function render() {
+      markersLayer.clearLayers();
+
+      const shown = places.filter(p =>
+        (typeFilter === "הכול" || p.type === typeFilter) &&
+        (visitedFilter === "הכול" || (visitedFilter === "ביקרתי") === (p.visited === "ביקרתי"))
+      );
+
+      shown.forEach(p => {
+        L.marker([p.lat, p.lng], { icon: markerIcon(p) })
+          .bindPopup(popupHtml(p), { minWidth: 270, maxWidth: 270 })
+          .addTo(markersLayer);
+      });
+
+      document.getElementById("counter").textContent = `${shown.length} מקומות`;
+    }
+
+    // ---------- כפתורי הסינון ----------
+    function makeChips(containerId, options, onSelect) {
+      const container = document.getElementById(containerId);
+      options.forEach(([value, label], i) => {
+        const chip = document.createElement("button");
+        chip.className = i === 0 ? "chip active" : "chip";
+        chip.textContent = label;
+        chip.addEventListener("click", () => {
+          container.querySelectorAll(".chip").forEach(c => c.classList.remove("active"));
+          chip.classList.add("active");
+          onSelect(value);
+          render();
+        });
+        container.appendChild(chip);
+      });
+    }
+
+    makeChips("type-filters", TYPE_OPTIONS, value => typeFilter = value);
+    makeChips("visited-filters", VISITED_OPTIONS, value => visitedFilter = value);
+    render();
   </script>
 </body>
 </html>
