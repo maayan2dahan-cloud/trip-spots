@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>טיולים וטבע בארץ</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <style>
+    body { margin: 0; font-family: Arial, sans-serif; }
+    h1 { margin: 0; padding: 12px; background: #2e7d32; color: white; font-size: 22px; }
+    #map { height: calc(100vh - 50px); }
+    .popup h3 { margin: 0 0 6px; }
+    .buttons a { display: inline-block; margin: 4px 0 0 6px; padding: 4px 8px;
+                 border-radius: 6px; color: white !important; text-decoration: none; }
+    .waze  { background: #33ccff; }
+    .gmaps { background: #4285f4; }
+    .insta { background: #d62976; }
+  </style>
+</head>
+<body>
+  <h1>טיולים וטבע בארץ 🌿</h1>
+  <div id="map"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    // המקומות מגיעים מפייתון
+    const places = {{ places | tojson }};
+
+    // יצירת המפה, ממורכזת על ישראל
+    const map = L.map("map").setView([31.5, 35.0], 8);
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "© OpenStreetMap"
+    }).addTo(map);
+
+    // סיכה לכל מקום
+    places.forEach(p => {
+      const waze  = `https://waze.com/ul?ll=${p.lat},${p.lng}&navigate=yes`;
+      const gmaps = `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}`;
+
+      let html = `
+        <div class="popup">
+          <h3>${p.name}</h3>
+          <p>${p.description}</p>
+          <p>🚗 חניה: ${p.parking ? "יש" : "אין"}<br>
+             👥 עומס: ${p.crowded}<br>
+             🥾 הליכה: ${p.walk_minutes} דק'</p>
+          <div class="buttons">
+            <a class="waze" href="${waze}" target="_blank">Waze</a>
+            <a class="gmaps" href="${gmaps}" target="_blank">Google Maps</a>`;
+      if (p.instagram) {
+        html += `<a class="insta" href="${p.instagram}" target="_blank">Instagram</a>`;
+      }
+      html += `</div></div>`;
+
+      L.marker([p.lat, p.lng]).addTo(map).bindPopup(html);
+    });
+  </script>
+</body>
+</html>
