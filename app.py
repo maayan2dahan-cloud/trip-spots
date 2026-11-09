@@ -23,6 +23,16 @@ places = [
         "crowded": "בינוני",
         "walk_minutes": 5,
     },
+    {
+        "name": "סכר כפר בלום ",
+        "lat": 33.16948121635752,
+        "lng":  35.61028670230135,
+        "description": "סכר מאוד יפה ויש שם גם נקודות לשבת עם ירידות למים ",
+        "instagram": "",
+        "parking": True,
+        "crowded": "בינוני",
+        "walk_minutes": 0,
+    },
 ]
 
 @app.route("/")
