@@ -34,27 +34,33 @@ L.tileLayer("https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.pn
 }).addTo(map);
 
     // סיכה לכל מקום
-    places.forEach(p => {
-      const waze  = `https://waze.com/ul?ll=${p.lat},${p.lng}&navigate=yes`;
-      const gmaps = `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}`;
+places.forEach(p => {
+  const waze  = `https://waze.com/ul?ll=${p.lat},${p.lng}&navigate=yes`;
+  const gmaps = `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}`;
 
-      let html = `
-        <div class="popup">
-          <h3>${p.name}</h3>
-          <p>${p.description}</p>
-          <p>🚗 חניה: ${p.parking ? "יש" : "אין"}<br>
-             👥 עומס: ${p.crowded}<br>
-             🥾 הליכה: ${p.walk_minutes} דק'</p>
-          <div class="buttons">
-            <a class="waze" href="${waze}" target="_blank">Waze</a>
-            <a class="gmaps" href="${gmaps}" target="_blank">Google Maps</a>`;
-      if (p.instagram) {
-        html += `<a class="insta" href="${p.instagram}" target="_blank">Instagram</a>`;
-      }
-      html += `</div></div>`;
+  // מציגים רק שדות שיש בהם מידע
+  let info = "";
+  if (p.parking) info += `🚗 חניה: ${p.parking}<br>`;
+  if (p.crowded) info += `👥 עומס: ${p.crowded}<br>`;
+  if (p.walk_minutes !== null) {
+    info += p.walk_minutes === 0 ? "🥾 ממש ליד החניה" : `🥾 הליכה: ${p.walk_minutes} דק'`;
+  }
 
-      L.marker([p.lat, p.lng]).addTo(map).bindPopup(html);
-    });
+  let html = `
+    <div class="popup">
+      <h3>${p.name}</h3>
+      ${p.description ? `<p>${p.description}</p>` : ""}
+      <p>${info}</p>
+      <div class="buttons">
+        <a class="waze" href="${waze}" target="_blank">Waze</a>
+        <a class="gmaps" href="${gmaps}" target="_blank">Google Maps</a>`;
+  if (p.instagram) {
+    html += `<a class="insta" href="${p.instagram}" target="_blank">Instagram</a>`;
+  }
+  html += `</div></div>`;
+
+  L.marker([p.lat, p.lng]).addTo(map).bindPopup(html);
+});
   </script>
 </body>
 </html>
