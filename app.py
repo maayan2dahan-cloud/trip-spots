@@ -4,24 +4,24 @@ app = Flask(__name__)
 
 places = [
     {
-        "name": "עין חניה",
-        "lat": 31.7428,
-        "lng": 35.1617,
-        "description": "מעיין עם בריכות ומבנים עתיקים, קרוב לירושלים.",
+        "name": "נהר הירדן",
+        "lat": 33.04826822089276,
+        "lng":  35.62750630230458,
+        "description": "נקודה יפה על הירדן שיש בה מקום נוח לרדת למים",
         "instagram": "",
         "parking": True,
-        "crowded": "עמוס בסופ\"ש",
-        "walk_minutes": 5,
+        "crowded": "בסמפטמבר היה ריק",
+        "walk_minutes": 0,
     },
     {
-        "name": "מפל הבניאס",
-        "lat": 33.2378,
-        "lng": 35.6303,
-        "description": "המפל הכי חזק בארץ, מסלול קצר ויפה.",
+        "name": "הלגונה בדפנה",
+        "lat": 33.241218526699804, 
+        "lng": 35.64410333113514,
+        "description": "חניה ללגונה בשדות",
         "instagram": "",
         "parking": True,
         "crowded": "בינוני",
-        "walk_minutes": 20,
+        "walk_minutes": 5,
     },
 ]
 
