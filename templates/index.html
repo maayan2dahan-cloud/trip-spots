@@ -28,9 +28,11 @@
 
     // יצירת המפה, ממורכזת על ישראל
     const map = L.map("map").setView([31.5, 35.0], 8);
-    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: "© OpenStreetMap"
-    }).addTo(map);
+L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
+  attribution: "© OpenStreetMap contributors © CARTO",
+  subdomains: "abcd",
+  maxZoom: 20
+}).addTo(map);
 
     // סיכה לכל מקום
     places.forEach(p => {
