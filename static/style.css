@@ -18,6 +18,8 @@
   --trail-bg:  #f4f7f1; --trail:  #a7c096;   /* מסלול */
   --stream-bg: #f0f9f7; --stream: #86c3b8;   /* נחל */
   --other-bg:  #f6f6f4; --other:  #b5b5b0;   /* אחר */
+
+  --tag-font: "Frank Ruhl Libre", Georgia, serif;   /* הגופן של תגיות הסוג ושמות המקומות */
 }
 
 * { box-sizing: border-box; }
@@ -88,6 +90,7 @@ button { font-family: inherit; }
 .pin-label {
   position: absolute; top: 50px; left: 50%; transform: translateX(-50%);
   display: flex; align-items: center; gap: 4px; padding: 1px 9px; white-space: nowrap;
+  font-family: var(--tag-font); font-weight: 500;
   font-size: 12.5px; color: #555; background: var(--bg); border-radius: 999px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, .06);
 }
@@ -138,10 +141,13 @@ button { font-family: inherit; }
 .p-body { padding: 16px 20px 20px; }
 .p-type {
   display: inline-flex; align-items: center; gap: 5px; padding: 1px 10px; border-radius: 999px;
+  font-family: var(--tag-font); font-weight: 500;
   font-size: 13px; color: #555; background: var(--bg);
 }
 .p-type svg { width: 12px; height: 12px; color: var(--c); }
-.p-body h3 { margin: 6px 0 6px; font-size: 22px; font-weight: 300; letter-spacing: .02em; }
+.p-body h3 { margin: 8px 0 6px; font-family: var(--tag-font); font-size: 24px; font-weight: 400; letter-spacing: .01em; display: flex; align-items: center; gap: 8px; }
+.p-leaf { display: inline-flex; color: #9aa88f; }
+.p-leaf svg { width: 18px; height: 18px; }
 .p-desc { font-size: 14px; color: #444; line-height: 1.5; }
 .p-meta { font-size: 12.5px; color: var(--muted); margin-bottom: 16px; }
 .p-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
@@ -238,7 +244,7 @@ button { font-family: inherit; }
 .dir-hero { width: 100%; height: 260px; object-fit: cover; display: block; }
 .dir-body { padding: 28px 32px 32px; }
 .dir-kicker { font-size: 12px; letter-spacing: .25em; color: var(--muted); margin: 14px 0 2px; }
-.dir-body h1 { margin: 0 0 6px; font-size: 32px; font-weight: 300; letter-spacing: .02em; }
+.dir-body h1 { margin: 0 0 6px; font-family: var(--tag-font); font-size: 34px; font-weight: 400; letter-spacing: .01em; }
 .dir-sub { font-size: 13px; color: var(--muted); margin-bottom: 26px; }
 .dir-text { font-size: 16px; line-height: 1.9; color: #333; white-space: pre-line; margin: 0 0 28px; }
 .dir-section { font-size: 12px; letter-spacing: .25em; color: var(--muted); margin: 0 0 12px; }

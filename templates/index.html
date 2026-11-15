@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MAAYAN'S MAP</title>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600&family=Frank+Ruhl+Libre:wght@400;500&display=swap">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
@@ -64,6 +64,9 @@
     };
     // מחלקת צבע לכל סוג (מוגדרת ב-style.css)
     const TYPE_CLASS = { "מעיין": "t-spring", "תצפית": "t-view", "חוף ים": "t-beach", "מסלול": "t-trail", "נחל": "t-stream", "אחר": "t-other" };
+
+    // העלה שמופיע אחרי שם המקום בחלון (כמו בלוגו)
+    const LEAF = '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 29C10.5 21.5 15.5 13.5 25.5 4.5"/><path d="M10.4 21.2Q8.3 17.0 3.6 17.2Q5.7 21.4 10.4 21.2Z"/><path d="M10.4 21.2Q12.9 24.2 16.6 23.2Q14.1 20.2 10.4 21.2Z"/><path d="M14.8 14.6Q13.5 9.8 8.6 9.0Q9.9 13.8 14.8 14.6Z"/><path d="M14.8 14.6Q17.5 17.9 21.6 16.8Q18.9 13.5 14.8 14.6Z"/><path d="M20.2 8.6Q20.3 4.4 16.6 2.6Q16.5 6.8 20.2 8.6Z"/><path d="M20.2 8.6Q23.1 11.8 27.2 10.6Q24.3 7.4 20.2 8.6Z"/><path d="M24.4 5.6Q27.6 5.1 28.6 2.0Q25.4 2.5 24.4 5.6Z"/></svg>';
 
     const typeOf  = p => ICON[p.type] ? p.type : "אחר";
     const iconOf  = p => ICON[typeOf(p)];
@@ -167,7 +170,7 @@
         ${galleryHtml(p.gallery)}
         <div class="p-body">
           <span class="p-type ${classOf(p)}">${iconOf(p)}${typeOf(p)}</span>
-          <h3>${p.name}</h3>
+          <h3>${p.name}<span class="p-leaf">${LEAF}</span></h3>
           ${p.description ? `<p class="p-desc">${p.description}</p>` : ""}
           <div class="p-meta">${meta}</div>
           ${(p.directions || p.media_count) ? `<a class="p-how" href="/directions/${p.id}">הוראות הגעה ←</a>` : ""}
