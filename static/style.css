@@ -92,6 +92,14 @@ button { font-family: inherit; }
 .pin.not-visited { opacity: .55; }
 .pin.not-visited .pin-circle { box-shadow: 0 0 0 1px var(--muted), 0 6px 16px rgba(0, 0, 0, .12); }
 
+/* מפה רחוקה: סיכות קטנות, בלי תגית. בלי תמונה - עיגול בצבע של הסוג */
+.far .pin { transform: scale(.4); }
+.far .pin:hover { transform: scale(.55); }
+.far .pin-label, .far .pin-icon { display: none; }
+.far .pin-circle { background: var(--c); border-width: 6px; box-shadow: 0 0 0 2.5px var(--ink), 0 4px 10px rgba(0, 0, 0, .25); }
+.far .pin.not-visited { opacity: .8; }
+.far .pin.not-visited .pin-circle { box-shadow: 0 0 0 2.5px var(--muted), 0 4px 10px rgba(0, 0, 0, .2); }
+
 /* ---------- חלון מידע ---------- */
 .leaflet-popup-content-wrapper { text-align: right; padding: 0; border-radius: 2px; overflow: hidden; box-shadow: 0 18px 40px rgba(0, 0, 0, .18); }
 .leaflet-popup-content { margin: 0; }

@@ -87,8 +87,50 @@
     let areaCircle = null;    // העיגול על המפה
 
     // ---------- המפה ----------
-    const map = L.map("map", { zoomControl: false }).setView([31.5, 35.0], 8);
+    const map = L.map("map", { zoomControl: false, zoomSnap: 0, scrollWheelZoom: false }).setView([31.5, 35.0], 8);
     L.control.zoom({ position: "bottomleft" }).addTo(map);
+
+    // ---------- גלגלת ולוח מגע ----------
+    // עכבר: גלגלת = זום, גרירה עם לחיצה = הזזה (כמו במפות רגילות)
+    // לוח מגע: שתי אצבעות = הזזה, צביטה = זום
+    let lastTouchpad = 0;   // מתי בפעם האחרונה זיהינו תנועה של לוח מגע
+
+    function looksLikeTouchpad(e) {
+      // לוח מגע שולח הרבה תנועות קטנות, לפעמים גם הצידה ובמספרים לא שלמים.
+      // גלגלת של עכבר שולחת "קפיצות" גדולות ועגולות (בערך 100) ורק למעלה/למטה.
+      return e.deltaX !== 0 || Math.abs(e.deltaY) < 50 || !Number.isInteger(e.deltaY);
+    }
+
+    map.getContainer().addEventListener("wheel", e => {
+      e.preventDefault();                       // לא לתת לדפדפן לגלול את כל הדף
+      const point = map.mouseEventToContainerPoint(e);
+
+      if (e.ctrlKey) {
+        // צביטה בלוח המגע מגיעה לדפדפן כ"גלגלת + Ctrl"
+        map.setZoomAround(point, map.getZoom() - e.deltaY * 0.01, { animate: false });
+        return;
+      }
+
+      const now = Date.now();
+      if (looksLikeTouchpad(e)) lastTouchpad = now;
+
+      if (now - lastTouchpad < 400) {
+        // באמצע תנועה של לוח מגע: מזיזים את המפה
+        map.panBy([e.deltaX, e.deltaY], { animate: false });
+      } else {
+        // גלגלת של עכבר: זום פנימה או החוצה, סביב המקום של העכבר
+        map.setZoomAround(point, map.getZoom() - Math.sign(e.deltaY));
+      }
+    }, { passive: false });
+
+    // ---------- מפה רחוקה = סיכות קטנות ----------
+    const FAR_ZOOM = 10;   // מתחת לזום הזה הסיכות קטנות ובלי תגית
+    function updatePinSize() {
+      map.getContainer().classList.toggle("far", map.getZoom() < FAR_ZOOM);
+    }
+    map.on("zoomend", updatePinSize);
+    updatePinSize();
+
     L.tileLayer("https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png", {
       attribution: "© Stadia Maps © OpenMapTiles © OpenStreetMap",
       maxZoom: 20
@@ -147,7 +189,7 @@
       return L.divIcon({
         className: "",
         html: `
-          <div class="pin ${visited ? "" : "not-visited"}">
+          <div class="pin ${classOf(p)} ${visited ? "" : "not-visited"}">
             <div class="pin-circle">${inside}</div>
             <div class="pin-label ${classOf(p)}">${iconOf(p)}${typeOf(p)}</div>
           </div>`,
