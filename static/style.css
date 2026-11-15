@@ -112,6 +112,11 @@ body { margin: 0; font-family: "Rubik", Arial, sans-serif; color: var(--text); b
 .form-actions { display: flex; gap: 10px; margin-top: 8px; }
 .form-actions .btn { flex: 1; justify-content: center; padding: 12px; font-size: 16px; }
 
+/* ---------- מחיקה ---------- */
+.delete-form { max-width: 520px; margin: -12px auto 28px; text-align: center; }
+.btn-danger { background: white; color: #b42318; border-color: #f3c5c0; }
+.btn-danger:hover { background: #fdecea; }
+
 /* ---------- טלפון ---------- */
 @media (max-width: 600px) {
   .topbar { padding: 0 14px; }

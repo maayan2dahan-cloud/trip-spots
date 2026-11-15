@@ -101,5 +101,12 @@
       <a href="/" class="btn btn-ghost">ביטול</a>
     </div>
   </form>
+
+  {% if editing %}
+    <form class="delete-form" method="POST" action="/delete/{{ request.view_args.place_id }}"
+          onsubmit="return confirm('למחוק את המקום? אי אפשר לבטל את זה.');">
+      <button type="submit" class="btn btn-danger">🗑️ מחיקת המקום</button>
+    </form>
+  {% endif %}
 </body>
 </html>

@@ -151,6 +151,23 @@ def edit_place(place_id):
     place["location"] = f"{place['lat']}, {place['lng']}"
     return render_template("add.html", place=place, types=TYPES, editing=True)
 
+@app.route("/delete/<int:place_id>", methods=["POST"])
+def delete_place(place_id):
+    place = get_place(place_id)
+    if place is None:
+        return "המקום לא נמצא", 404
 
+    # מוחקים גם את קובץ התמונה, אם יש
+    if place["image"]:
+        path = os.path.join(UPLOAD_FOLDER, place["image"])
+        if os.path.exists(path):
+            os.remove(path)
+
+    conn = get_db()
+    conn.execute("DELETE FROM places WHERE id = ?", (place_id,))
+    conn.commit()
+    conn.close()
+    return redirect(url_for("home"))
+    
 if __name__ == "__main__":
     app.run(debug=True)
