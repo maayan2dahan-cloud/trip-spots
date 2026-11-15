@@ -3,14 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% if editing %}עריכת מקום{% else %}הוספת מקום{% endif %}</title>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&display=swap">
+  <title>{% if editing %}עריכת מקום{% else %}הוספת מקום{% endif %} · MAAYAN'S MAP</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600&display=swap">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body>
+<body class="form-page">
   <header class="topbar">
-    <a href="/" class="logo">🌿 טיולים <span>וטבע</span> בארץ</a>
-    <a href="/" class="btn btn-ghost">חזרה למפה</a>
+    <nav class="top-right">
+      <a class="top-link" href="/">חזרה למפה</a>
+    </nav>
+    <a class="logo" href="/">MAAYAN'S MAP<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M7 29C10.5 21.5 15.5 13.5 25.5 4.5"/><path d="M10.4 21.2Q8.3 17.0 3.6 17.2Q5.7 21.4 10.4 21.2Z"/><path d="M10.4 21.2Q12.9 24.2 16.6 23.2Q14.1 20.2 10.4 21.2Z"/><path d="M14.8 14.6Q13.5 9.8 8.6 9.0Q9.9 13.8 14.8 14.6Z"/><path d="M14.8 14.6Q17.5 17.9 21.6 16.8Q18.9 13.5 14.8 14.6Z"/><path d="M20.2 8.6Q20.3 4.4 16.6 2.6Q16.5 6.8 20.2 8.6Z"/><path d="M20.2 8.6Q23.1 11.8 27.2 10.6Q24.3 7.4 20.2 8.6Z"/><path d="M24.4 5.6Q27.6 5.1 28.6 2.0Q25.4 2.5 24.4 5.6Z"/></svg></a>
   </header>
 
   <form class="form-card" method="POST" enctype="multipart/form-data">
@@ -38,7 +40,7 @@
       <div class="field">
         <label>ביקרתי שם?</label>
         <select name="visited">
-          {% for value, text in [("ביקרתי", "✅ ביקרתי"), ("אינסטגרם", "📱 ראיתי באינסטגרם")] %}
+          {% for value, text in [("ביקרתי", "ביקרתי"), ("אינסטגרם", "עוד לא (ראיתי באינסטגרם)")] %}
             <option value="{{ value }}" {% if place.visited == value %}selected{% endif %}>{{ text }}</option>
           {% endfor %}
         </select>
@@ -96,6 +98,40 @@
              value="{{ place.walk_minutes if place.walk_minutes is not none else '' }}">
     </div>
 
+    <div class="form-section">
+      <h3>הוראות הגעה</h3>
+      <p>יופיעו בדף נפרד, שנפתח מ"הוראות הגעה" בחלון של המקום</p>
+
+      <div class="field">
+        <label>הסבר בטקסט</label>
+        <textarea name="directions" rows="5"
+                  placeholder="למשל: חונים ליד השער הצהוב, הולכים בשביל השמאלי 10 דקות...">{{ place.directions or '' }}</textarea>
+      </div>
+
+      <div class="field">
+        <label>תמונות וסרטונים של הדרך</label>
+        {% if media %}
+          <div class="media-thumbs">
+            {% for m in media %}
+              <label class="t" title="לחיצה מסמנת למחיקה">
+                {% if m.kind == "video" %}
+                  <video src="/static/uploads/{{ m.filename }}#t=0.1" muted preload="metadata"></video>
+                  <span class="vid">וידאו</span>
+                {% else %}
+                  <img src="/static/uploads/{{ m.filename }}">
+                {% endif %}
+                <input type="checkbox" name="remove_media" value="{{ m.id }}">
+                <span class="rm">✕</span>
+              </label>
+            {% endfor %}
+          </div>
+          <div class="hint">לחיצה על ✕ מסמנת קובץ למחיקה. הוא יימחק כשתשמרי.</div>
+        {% endif %}
+        <input name="media" type="file" accept="image/*,video/*" multiple>
+        <div class="hint">אפשר לבחור כמה קבצים ביחד (תמונות וסרטונים)</div>
+      </div>
+    </div>
+
     <div class="form-actions">
       <button type="submit" class="btn">{% if editing %}שמירת שינויים{% else %}שמירה{% endif %}</button>
       <a href="/" class="btn btn-ghost">ביטול</a>
@@ -105,7 +141,7 @@
   {% if editing %}
     <form class="delete-form" method="POST" action="/delete/{{ request.view_args.place_id }}"
           onsubmit="return confirm('למחוק את המקום? אי אפשר לבטל את זה.');">
-      <button type="submit" class="btn btn-danger">🗑️ מחיקת המקום</button>
+      <button type="submit" class="btn-danger">מחיקת המקום</button>
     </form>
   {% endif %}
 </body>

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>הוראות הגעה: {{ place.name }} · MAAYAN'S MAP</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600&display=swap">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="dir-page">
+  <header class="topbar">
+    <nav class="top-right">
+      <a class="top-link" href="/">חזרה למפה</a>
+    </nav>
+    <a class="logo" href="/">MAAYAN'S MAP<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M7 29C10.5 21.5 15.5 13.5 25.5 4.5"/><path d="M10.4 21.2Q8.3 17.0 3.6 17.2Q5.7 21.4 10.4 21.2Z"/><path d="M10.4 21.2Q12.9 24.2 16.6 23.2Q14.1 20.2 10.4 21.2Z"/><path d="M14.8 14.6Q13.5 9.8 8.6 9.0Q9.9 13.8 14.8 14.6Z"/><path d="M14.8 14.6Q17.5 17.9 21.6 16.8Q18.9 13.5 14.8 14.6Z"/><path d="M20.2 8.6Q20.3 4.4 16.6 2.6Q16.5 6.8 20.2 8.6Z"/><path d="M20.2 8.6Q23.1 11.8 27.2 10.6Q24.3 7.4 20.2 8.6Z"/><path d="M24.4 5.6Q27.6 5.1 28.6 2.0Q25.4 2.5 24.4 5.6Z"/></svg></a>
+  </header>
+
+  {% set type_class = {"מעיין": "t-spring", "תצפית": "t-view", "מסלול": "t-trail", "נחל": "t-stream"}.get(place.type, "t-other") %}
+  {% set icons = {
+    "מעיין": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3c3.5 4.5 6 7.6 6 11a6 6 0 0 1-12 0c0-3.4 2.5-6.5 6-11z"/></svg>',
+    "תצפית": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 18h18M7 18a5 5 0 0 1 10 0M12 7V4M5.6 10.6 3.8 8.8M18.4 10.6l1.8-1.8"/></svg>',
+    "מסלול": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 20l6-10 4 6 3-4 5 8z"/></svg>',
+    "נחל": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9c3-2 5 2 9 0s6-2 9 0M3 15c3-2 5 2 9 0s6-2 9 0"/></svg>'
+  } %}
+  {% set pin_icon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s7-6.2 7-11a7 7 0 0 0-14 0c0 4.8 7 11 7 11z"/><circle cx="12" cy="10" r="2.2"/></svg>' %}
+
+  <main class="dir-wrap">
+    <div class="dir-card">
+      {% if place.image %}
+        <img class="dir-hero" src="/static/uploads/{{ place.image }}" alt="">
+      {% endif %}
+
+      <div class="dir-body">
+        <span class="p-type {{ type_class }}">{{ icons.get(place.type, pin_icon) | safe }}{{ place.type or "אחר" }}</span>
+        <div class="dir-kicker">הוראות הגעה</div>
+        <h1>{{ place.name }}</h1>
+
+        {% set meta = [] %}
+        {% if place.parking %}{% set _ = meta.append("חניה: " ~ place.parking) %}{% endif %}
+        {% if place.walk_minutes == 0 %}{% set _ = meta.append("ליד החניה") %}
+        {% elif place.walk_minutes %}{% set _ = meta.append(place.walk_minutes ~ " דק' הליכה") %}{% endif %}
+        {% if meta %}<div class="dir-sub">{{ meta | join("  ·  ") }}</div>{% endif %}
+
+        {% if place.directions %}
+          <p class="dir-text">{{ place.directions }}</p>
+        {% endif %}
+
+        {% if media %}
+          <div class="dir-section">תמונות וסרטונים מהדרך</div>
+          <div class="dir-media">
+            {% for m in media %}
+              <div class="m">
+                {% if m.kind == "video" %}
+                  <video src="/static/uploads/{{ m.filename }}" controls preload="metadata" playsinline></video>
+                {% else %}
+                  <a href="/static/uploads/{{ m.filename }}" target="_blank">
+                    <img src="/static/uploads/{{ m.filename }}" alt="">
+                  </a>
+                {% endif %}
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        {% if not place.directions and not media %}
+          <p class="dir-empty">עוד אין הוראות הגעה למקום הזה. אפשר להוסיף אותן בעריכה.</p>
+        {% endif %}
+
+        <div class="dir-actions">
+          <a class="dark" href="https://waze.com/ul?ll={{ place.lat }},{{ place.lng }}&navigate=yes" target="_blank">ניווט ב-Waze</a>
+          <a href="https://www.google.com/maps/dir/?api=1&destination={{ place.lat }},{{ place.lng }}" target="_blank">Google Maps</a>
+          <a class="plain" href="/edit/{{ place.id }}">עריכה</a>
+        </div>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

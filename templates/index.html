@@ -3,41 +3,44 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>טיולים וטבע בארץ</title>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&display=swap">
+  <title>MAAYAN'S MAP</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600&display=swap">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
   <header class="topbar">
-    <a href="/" class="logo">🌿 טיולים <span>וטבע</span> בארץ</a>
-    <a href="/add" class="btn">+ הוספת מקום</a>
+    <nav class="top-right">
+      <a class="top-link on map-link" href="/">מפה</a>
+      <button class="top-link" id="area-btn">מה יש באזור</button>
+    </nav>
+    <a class="logo" href="/">MAAYAN'S MAP<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M7 29C10.5 21.5 15.5 13.5 25.5 4.5"/><path d="M10.4 21.2Q8.3 17.0 3.6 17.2Q5.7 21.4 10.4 21.2Z"/><path d="M10.4 21.2Q12.9 24.2 16.6 23.2Q14.1 20.2 10.4 21.2Z"/><path d="M14.8 14.6Q13.5 9.8 8.6 9.0Q9.9 13.8 14.8 14.6Z"/><path d="M14.8 14.6Q17.5 17.9 21.6 16.8Q18.9 13.5 14.8 14.6Z"/><path d="M20.2 8.6Q20.3 4.4 16.6 2.6Q16.5 6.8 20.2 8.6Z"/><path d="M20.2 8.6Q23.1 11.8 27.2 10.6Q24.3 7.4 20.2 8.6Z"/><path d="M24.4 5.6Q27.6 5.1 28.6 2.0Q25.4 2.5 24.4 5.6Z"/></svg></a>
+    <nav class="top-left">
+      <a class="top-link" href="/add">+<span class="long"> הוספת מקום</span></a>
+    </nav>
   </header>
 
   <div class="filters">
-    <div class="chip-row" id="type-filters"></div>
-    <div class="chip-row" id="visited-filters"></div>
-    <div class="chip-row">
-      <button class="chip area-btn" id="area-btn">📍 מה יש באזור?</button>
-    </div>
-    <div class="counter" id="counter"></div>
+    <div class="f-row" id="type-filters"></div>
+    <div class="f-row" id="visited-filters"></div>
+    <div class="f-meta" id="counter"></div>
   </div>
 
   <!-- חלון "מה יש באזור" -->
   <div class="area-panel" id="area-panel" hidden>
     <div class="area-head">
-      <strong>מה יש באזור?</strong>
+      <strong>מה יש באזור</strong>
       <button class="icon-btn" id="area-close">✕</button>
     </div>
     <div class="area-controls">
-      <span>רדיוס:</span>
+      <span>רדיוס</span>
       <select id="area-radius">
         <option value="5">5 ק"מ</option>
         <option value="10">10 ק"מ</option>
         <option value="20" selected>20 ק"מ</option>
         <option value="50">50 ק"מ</option>
       </select>
-      <button class="chip" id="my-location">📡 המיקום שלי</button>
+      <button class="top-link" id="my-location">המיקום שלי</button>
     </div>
     <div class="area-hint" id="area-hint">לחצי על המפה בנקודה שמעניינת אותך</div>
     <ul class="area-list" id="area-list"></ul>
@@ -50,14 +53,27 @@
     // המקומות מגיעים מפייתון
     const places = {{ places | tojson }};
 
-    const EMOJI = { "מעיין": "💧", "תצפית": "🌄", "מסלול": "🥾", "נחל": "🏞️", "אחר": "📍" };
+    // ---------- אייקונים בקו דק לכל סוג ----------
+    const ICON = {
+      "מעיין": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3c3.5 4.5 6 7.6 6 11a6 6 0 0 1-12 0c0-3.4 2.5-6.5 6-11z"/></svg>',
+      "תצפית": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 18h18M7 18a5 5 0 0 1 10 0M12 7V4M5.6 10.6 3.8 8.8M18.4 10.6l1.8-1.8"/></svg>',
+      "מסלול": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 20l6-10 4 6 3-4 5 8z"/></svg>',
+      "נחל":   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9c3-2 5 2 9 0s6-2 9 0M3 15c3-2 5 2 9 0s6-2 9 0"/></svg>',
+      "אחר":   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s7-6.2 7-11a7 7 0 0 0-14 0c0 4.8 7 11 7 11z"/><circle cx="12" cy="10" r="2.2"/></svg>'
+    };
+    // מחלקת צבע לכל סוג (מוגדרת ב-style.css)
+    const TYPE_CLASS = { "מעיין": "t-spring", "תצפית": "t-view", "מסלול": "t-trail", "נחל": "t-stream", "אחר": "t-other" };
+
+    const typeOf  = p => ICON[p.type] ? p.type : "אחר";
+    const iconOf  = p => ICON[typeOf(p)];
+    const classOf = p => TYPE_CLASS[typeOf(p)];
 
     const TYPE_OPTIONS = [
-      ["הכול", "הכול"], ["מעיין", "💧 מעיינות"], ["תצפית", "🌄 תצפיות"],
-      ["מסלול", "🥾 מסלולים"], ["נחל", "🏞️ נחלים"], ["אחר", "📍 אחר"]
+      ["הכול", "הכול"], ["מעיין", "מעיינות"], ["תצפית", "תצפיות"],
+      ["מסלול", "מסלולים"], ["נחל", "נחלים"], ["אחר", "אחר"]
     ];
     const VISITED_OPTIONS = [
-      ["הכול", "הכול"], ["ביקרתי", "✅ ביקרתי"], ["אינסטגרם", "📱 עוד לא"]
+      ["הכול", "הכול"], ["ביקרתי", "ביקרתי"], ["אינסטגרם", "עוד לא"]
     ];
 
     // ---------- מצב הסינון ----------
@@ -97,38 +113,47 @@
       const gmaps = `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}`;
       const visited = p.visited === "ביקרתי";
 
-      let meta = `<span class="meta">${visited ? "✅ ביקרתי" : "📱 מהאינסטגרם"}</span>`;
-      if (p.parking) meta += `<span class="meta">🚗 חניה: ${p.parking}</span>`;
-      if (p.crowded) meta += `<span class="meta">👥 ${p.crowded}</span>`;
-      if (p.walk_minutes !== null) {
-        meta += `<span class="meta">🥾 ${p.walk_minutes === 0 ? "ליד החניה" : p.walk_minutes + " דק' הליכה"}</span>`;
-      }
+      const meta = [
+        visited ? "ביקרתי" : "עוד לא ביקרתי",
+        p.parking ? `חניה: ${p.parking}` : "",
+        p.crowded ? `עומס: ${p.crowded}` : "",
+        p.walk_minutes === 0 ? "ליד החניה" : (p.walk_minutes ? `${p.walk_minutes} דק' הליכה` : "")
+      ].filter(Boolean).join("  ·  ");
 
       return `
-        ${p.image ? `<img class="popup-img" src="/static/uploads/${p.image}">` : ""}
-        <div class="popup-body">
-          <span class="popup-tag">${EMOJI[p.type] || "📍"} ${p.type || "אחר"}</span>
+        ${p.image ? `<img class="p-img" src="/static/uploads/${p.image}">` : ""}
+        <div class="p-body">
+          <span class="p-type ${classOf(p)}">${iconOf(p)}${typeOf(p)}</span>
           <h3>${p.name}</h3>
-          ${p.description ? `<p class="popup-desc">${p.description}</p>` : ""}
-          <div class="popup-meta">${meta}</div>
-          <div class="popup-actions">
-            <a class="primary" href="${waze}" target="_blank">Waze</a>
+          ${p.description ? `<p class="p-desc">${p.description}</p>` : ""}
+          <div class="p-meta">${meta}</div>
+          ${(p.directions || p.media_count) ? `<a class="p-how" href="/directions/${p.id}">הוראות הגעה ←</a>` : ""}
+          <div class="p-actions">
+            <a class="dark" href="${waze}" target="_blank">ניווט ב-Waze</a>
             <a href="${gmaps}" target="_blank">Google Maps</a>
             ${p.instagram ? `<a href="${p.instagram}" target="_blank">Instagram</a>` : ""}
-            <a href="/edit/${p.id}">✏️ עריכה</a>
+            <a class="plain" href="/edit/${p.id}">עריכה</a>
           </div>
         </div>`;
     }
 
-    // ---------- סיכה ----------
+    // ---------- סיכה: תמונה בעיגול (או אייקון) + תגית סוג ----------
     function markerIcon(p) {
       const visited = p.visited === "ביקרתי";
+      const inside = p.image
+        ? `<img src="/static/uploads/${p.image}" alt="">`
+        : `<span class="pin-icon ${classOf(p)}">${iconOf(p)}</span>`;
+
       return L.divIcon({
-        className: "marker-wrap",
-        html: `<div class="marker ${visited ? "" : "not-visited"}">${EMOJI[p.type] || "📍"}</div>`,
-        iconSize: [38, 38],
-        iconAnchor: [19, 19],
-        popupAnchor: [0, -18]
+        className: "",
+        html: `
+          <div class="pin ${visited ? "" : "not-visited"}">
+            <div class="pin-circle">${inside}</div>
+            <div class="pin-label ${classOf(p)}">${iconOf(p)}${typeOf(p)}</div>
+          </div>`,
+        iconSize: [54, 54],
+        iconAnchor: [27, 27],
+        popupAnchor: [0, -30]
       });
     }
 
@@ -138,7 +163,7 @@
 
       // סינון לפי סוג ולפי ביקור
       let shown = places.filter(p =>
-        (typeFilter === "הכול" || p.type === typeFilter) &&
+        (typeFilter === "הכול" || typeOf(p) === typeFilter) &&
         (visitedFilter === "הכול" || (visitedFilter === "ביקרתי") === (p.visited === "ביקרתי"))
       );
 
@@ -153,7 +178,7 @@
       const markerById = {};
       shown.forEach(p => {
         markerById[p.id] = L.marker([p.lat, p.lng], { icon: markerIcon(p) })
-          .bindPopup(popupHtml(p), { minWidth: 270, maxWidth: 270 })
+          .bindPopup(popupHtml(p), { minWidth: 290, maxWidth: 290 })
           .addTo(markersLayer);
       });
 
@@ -174,7 +199,7 @@
 
       shown.forEach(p => {
         const li = document.createElement("li");
-        li.innerHTML = `<span>${EMOJI[p.type] || "📍"} ${p.name}</span>
+        li.innerHTML = `<span class="name ${classOf(p)}">${iconOf(p)} ${p.name}</span>
                         <span class="dist">${p.dist.toFixed(1)} ק"מ</span>`;
         li.addEventListener("click", () => {
           map.setView([p.lat, p.lng], 13);
@@ -190,7 +215,7 @@
       if (areaCircle) map.removeLayer(areaCircle);
       areaCircle = L.circle(areaCenter, {
         radius: areaRadius * 1000,      // Leaflet מודד במטרים
-        color: "#2f6b4f", weight: 1.5, fillOpacity: 0.08
+        color: "#111", weight: 1, fillColor: "#b9a6d9", fillOpacity: 0.08
       }).addTo(map);
       map.fitBounds(areaCircle.getBounds());
       render();
@@ -200,6 +225,7 @@
       areaOpen = true;
       document.getElementById("area-panel").hidden = false;
       document.getElementById("area-hint").textContent = "לחצי על המפה בנקודה שמעניינת אותך";
+      document.getElementById("area-btn").classList.add("on");
       map.getContainer().classList.add("picking");
     }
 
@@ -208,11 +234,12 @@
       areaCenter = null;
       if (areaCircle) { map.removeLayer(areaCircle); areaCircle = null; }
       document.getElementById("area-panel").hidden = true;
+      document.getElementById("area-btn").classList.remove("on");
       map.getContainer().classList.remove("picking");
       render();
     }
 
-    document.getElementById("area-btn").addEventListener("click", openArea);
+    document.getElementById("area-btn").addEventListener("click", () => areaOpen ? closeArea() : openArea());
     document.getElementById("area-close").addEventListener("click", closeArea);
 
     // לחיצה על המפה כשהחלון פתוח = בחירת נקודה
@@ -237,24 +264,24 @@
     });
 
     // ---------- כפתורי הסינון ----------
-    function makeChips(containerId, options, onSelect) {
+    function makeFilters(containerId, options, onSelect) {
       const container = document.getElementById(containerId);
       options.forEach(([value, label], i) => {
-        const chip = document.createElement("button");
-        chip.className = i === 0 ? "chip active" : "chip";
-        chip.textContent = label;
-        chip.addEventListener("click", () => {
-          container.querySelectorAll(".chip").forEach(c => c.classList.remove("active"));
-          chip.classList.add("active");
+        const btn = document.createElement("button");
+        btn.className = i === 0 ? "f on" : "f";
+        btn.textContent = label;
+        btn.addEventListener("click", () => {
+          container.querySelectorAll(".f").forEach(b => b.classList.remove("on"));
+          btn.classList.add("on");
           onSelect(value);
           render();
         });
-        container.appendChild(chip);
+        container.appendChild(btn);
       });
     }
 
-    makeChips("type-filters", TYPE_OPTIONS, value => typeFilter = value);
-    makeChips("visited-filters", VISITED_OPTIONS, value => visitedFilter = value);
+    makeFilters("type-filters", TYPE_OPTIONS, value => typeFilter = value);
+    makeFilters("visited-filters", VISITED_OPTIONS, value => visitedFilter = value);
     render();
   </script>
 </body>
