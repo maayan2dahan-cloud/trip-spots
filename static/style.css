@@ -33,6 +33,7 @@ body { margin: 0; font-family: "Rubik", Arial, sans-serif; color: var(--text); b
 /* ---------- מפה ---------- */
 #map { height: calc(100vh - 60px); }
 .leaflet-container { font-family: "Rubik", Arial, sans-serif; }
+.leaflet-container.picking { cursor: crosshair; }
 
 /* ---------- סינון ---------- */
 .filters {
@@ -47,6 +48,7 @@ body { margin: 0; font-family: "Rubik", Arial, sans-serif; color: var(--text); b
   font-size: 14px; color: var(--text); cursor: pointer;
 }
 .chip.active { background: var(--green); color: white; border-color: var(--green); }
+.chip.area-btn { font-weight: 500; }
 .counter {
   pointer-events: auto; background: white; padding: 4px 12px; border-radius: 999px;
   font-size: 13px; color: var(--muted); box-shadow: var(--shadow);
@@ -89,6 +91,32 @@ body { margin: 0; font-family: "Rubik", Arial, sans-serif; color: var(--text); b
 }
 .popup-actions a.primary { background: var(--green); border-color: var(--green); color: white !important; }
 
+/* ---------- מה יש באזור ---------- */
+.area-panel {
+  position: absolute; bottom: 20px; right: 16px; z-index: 950; width: 320px; max-height: 50vh;
+  background: white; border-radius: var(--radius); box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.area-panel[hidden] { display: none; }
+.area-head { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px 6px; }
+.icon-btn {
+  border: none; background: var(--bg); width: 28px; height: 28px; border-radius: 50%;
+  cursor: pointer; font-size: 14px; font-family: inherit;
+}
+.area-controls { display: flex; align-items: center; gap: 8px; padding: 0 16px 8px; font-size: 14px; }
+.area-controls select {
+  padding: 5px 8px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 14px;
+}
+.area-controls .chip { box-shadow: none; padding: 5px 10px; font-size: 13px; }
+.area-hint { padding: 0 16px 8px; font-size: 13px; color: var(--muted); }
+.area-list { list-style: none; margin: 0; padding: 0 8px 8px; overflow-y: auto; }
+.area-list li {
+  display: flex; justify-content: space-between; gap: 8px; padding: 9px 8px;
+  border-radius: 8px; cursor: pointer; font-size: 14px;
+}
+.area-list li:hover { background: var(--bg); }
+.dist { color: var(--muted); font-size: 13px; white-space: nowrap; }
+
 /* ---------- טופס ---------- */
 .form-card {
   max-width: 520px; margin: 28px auto; background: white; padding: 28px;
@@ -123,4 +151,5 @@ body { margin: 0; font-family: "Rubik", Arial, sans-serif; color: var(--text); b
   .logo { font-size: 17px; }
   .form-card { margin: 0; border-radius: 0; box-shadow: none; padding: 20px; }
   .row { grid-template-columns: 1fr; }
+  .area-panel { right: 8px; left: 8px; width: auto; bottom: 8px; }
 }

@@ -17,7 +17,30 @@
   <div class="filters">
     <div class="chip-row" id="type-filters"></div>
     <div class="chip-row" id="visited-filters"></div>
+    <div class="chip-row">
+      <button class="chip area-btn" id="area-btn">📍 מה יש באזור?</button>
+    </div>
     <div class="counter" id="counter"></div>
+  </div>
+
+  <!-- חלון "מה יש באזור" -->
+  <div class="area-panel" id="area-panel" hidden>
+    <div class="area-head">
+      <strong>מה יש באזור?</strong>
+      <button class="icon-btn" id="area-close">✕</button>
+    </div>
+    <div class="area-controls">
+      <span>רדיוס:</span>
+      <select id="area-radius">
+        <option value="5">5 ק"מ</option>
+        <option value="10">10 ק"מ</option>
+        <option value="20" selected>20 ק"מ</option>
+        <option value="50">50 ק"מ</option>
+      </select>
+      <button class="chip" id="my-location">📡 המיקום שלי</button>
+    </div>
+    <div class="area-hint" id="area-hint">לחצי על המפה בנקודה שמעניינת אותך</div>
+    <ul class="area-list" id="area-list"></ul>
   </div>
 
   <div id="map"></div>
@@ -37,9 +60,15 @@
       ["הכול", "הכול"], ["ביקרתי", "✅ ביקרתי"], ["אינסטגרם", "📱 עוד לא"]
     ];
 
-    // הסינון הנוכחי
+    // ---------- מצב הסינון ----------
     let typeFilter = "הכול";
     let visitedFilter = "הכול";
+
+    // ---------- מצב "מה יש באזור" ----------
+    let areaOpen = false;     // האם החלון פתוח
+    let areaCenter = null;    // הנקודה שנבחרה [lat, lng]
+    let areaRadius = 20;      // רדיוס בק"מ
+    let areaCircle = null;    // העיגול על המפה
 
     // ---------- המפה ----------
     const map = L.map("map", { zoomControl: false }).setView([31.5, 35.0], 8);
@@ -50,6 +79,17 @@
     }).addTo(map);
 
     const markersLayer = L.layerGroup().addTo(map);
+
+    // ---------- חישוב מרחק בין שתי נקודות (נוסחת Haversine) ----------
+    function distanceKm(lat1, lng1, lat2, lng2) {
+      const R = 6371;                          // רדיוס כדור הארץ בק"מ
+      const toRad = deg => deg * Math.PI / 180;
+      const dLat = toRad(lat2 - lat1);
+      const dLng = toRad(lng2 - lng1);
+      const a = Math.sin(dLat / 2) ** 2 +
+                Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+      return 2 * R * Math.asin(Math.sqrt(a));
+    }
 
     // ---------- חלון המידע ----------
     function popupHtml(p) {
@@ -92,23 +132,109 @@
       });
     }
 
-    // ---------- ציור הסיכות לפי הסינון ----------
+    // ---------- ציור הסיכות לפי כל הסינונים ----------
     function render() {
       markersLayer.clearLayers();
 
-      const shown = places.filter(p =>
+      // סינון לפי סוג ולפי ביקור
+      let shown = places.filter(p =>
         (typeFilter === "הכול" || p.type === typeFilter) &&
         (visitedFilter === "הכול" || (visitedFilter === "ביקרתי") === (p.visited === "ביקרתי"))
       );
 
+      // סינון לפי אזור: מוסיפים מרחק, משאירים רק מה שבתוך הרדיוס, וממיינים
+      if (areaCenter) {
+        shown = shown
+          .map(p => ({ ...p, dist: distanceKm(areaCenter[0], areaCenter[1], p.lat, p.lng) }))
+          .filter(p => p.dist <= areaRadius)
+          .sort((a, b) => a.dist - b.dist);
+      }
+
+      const markerById = {};
       shown.forEach(p => {
-        L.marker([p.lat, p.lng], { icon: markerIcon(p) })
+        markerById[p.id] = L.marker([p.lat, p.lng], { icon: markerIcon(p) })
           .bindPopup(popupHtml(p), { minWidth: 270, maxWidth: 270 })
           .addTo(markersLayer);
       });
 
       document.getElementById("counter").textContent = `${shown.length} מקומות`;
+      renderAreaList(shown, markerById);
     }
+
+    // ---------- הרשימה בחלון "מה יש באזור" ----------
+    function renderAreaList(shown, markerById) {
+      const list = document.getElementById("area-list");
+      const hint = document.getElementById("area-hint");
+      list.innerHTML = "";
+      if (!areaCenter) return;
+
+      hint.textContent = shown.length
+        ? `${shown.length} מקומות ברדיוס ${areaRadius} ק"מ`
+        : `אין מקומות ברדיוס ${areaRadius} ק"מ. נסי רדיוס גדול יותר`;
+
+      shown.forEach(p => {
+        const li = document.createElement("li");
+        li.innerHTML = `<span>${EMOJI[p.type] || "📍"} ${p.name}</span>
+                        <span class="dist">${p.dist.toFixed(1)} ק"מ</span>`;
+        li.addEventListener("click", () => {
+          map.setView([p.lat, p.lng], 13);
+          markerById[p.id].openPopup();
+        });
+        list.appendChild(li);
+      });
+    }
+
+    // ---------- בחירת נקודה ----------
+    function setAreaCenter(lat, lng) {
+      areaCenter = [lat, lng];
+      if (areaCircle) map.removeLayer(areaCircle);
+      areaCircle = L.circle(areaCenter, {
+        radius: areaRadius * 1000,      // Leaflet מודד במטרים
+        color: "#2f6b4f", weight: 1.5, fillOpacity: 0.08
+      }).addTo(map);
+      map.fitBounds(areaCircle.getBounds());
+      render();
+    }
+
+    function openArea() {
+      areaOpen = true;
+      document.getElementById("area-panel").hidden = false;
+      document.getElementById("area-hint").textContent = "לחצי על המפה בנקודה שמעניינת אותך";
+      map.getContainer().classList.add("picking");
+    }
+
+    function closeArea() {
+      areaOpen = false;
+      areaCenter = null;
+      if (areaCircle) { map.removeLayer(areaCircle); areaCircle = null; }
+      document.getElementById("area-panel").hidden = true;
+      map.getContainer().classList.remove("picking");
+      render();
+    }
+
+    document.getElementById("area-btn").addEventListener("click", openArea);
+    document.getElementById("area-close").addEventListener("click", closeArea);
+
+    // לחיצה על המפה כשהחלון פתוח = בחירת נקודה
+    map.on("click", e => {
+      if (areaOpen) setAreaCenter(e.latlng.lat, e.latlng.lng);
+    });
+
+    // שינוי רדיוס
+    document.getElementById("area-radius").addEventListener("change", e => {
+      areaRadius = Number(e.target.value);
+      if (areaCenter) setAreaCenter(areaCenter[0], areaCenter[1]);
+    });
+
+    // המיקום שלי (GPS)
+    document.getElementById("my-location").addEventListener("click", () => {
+      const hint = document.getElementById("area-hint");
+      hint.textContent = "מאתרת את המיקום שלך...";
+      navigator.geolocation.getCurrentPosition(
+        pos => setAreaCenter(pos.coords.latitude, pos.coords.longitude),
+        ()  => hint.textContent = "לא הצלחתי לקבל מיקום. אפשר ללחוץ על המפה במקום."
+      );
+    });
 
     // ---------- כפתורי הסינון ----------
     function makeChips(containerId, options, onSelect) {
