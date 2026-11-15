@@ -58,18 +58,19 @@
       "מעיין": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3c3.5 4.5 6 7.6 6 11a6 6 0 0 1-12 0c0-3.4 2.5-6.5 6-11z"/></svg>',
       "תצפית": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 18h18M7 18a5 5 0 0 1 10 0M12 7V4M5.6 10.6 3.8 8.8M18.4 10.6l1.8-1.8"/></svg>',
       "מסלול": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 20l6-10 4 6 3-4 5 8z"/></svg>',
+      "חוף ים": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 11a8 8 0 0 1 16 0z"/><path d="M12 11v8"/><path d="M3 20c2-1.3 4-1.3 6 0s4 1.3 6 0 4-1.3 6 0"/></svg>',
       "נחל":   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9c3-2 5 2 9 0s6-2 9 0M3 15c3-2 5 2 9 0s6-2 9 0"/></svg>',
       "אחר":   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s7-6.2 7-11a7 7 0 0 0-14 0c0 4.8 7 11 7 11z"/><circle cx="12" cy="10" r="2.2"/></svg>'
     };
     // מחלקת צבע לכל סוג (מוגדרת ב-style.css)
-    const TYPE_CLASS = { "מעיין": "t-spring", "תצפית": "t-view", "מסלול": "t-trail", "נחל": "t-stream", "אחר": "t-other" };
+    const TYPE_CLASS = { "מעיין": "t-spring", "תצפית": "t-view", "חוף ים": "t-beach", "מסלול": "t-trail", "נחל": "t-stream", "אחר": "t-other" };
 
     const typeOf  = p => ICON[p.type] ? p.type : "אחר";
     const iconOf  = p => ICON[typeOf(p)];
     const classOf = p => TYPE_CLASS[typeOf(p)];
 
     const TYPE_OPTIONS = [
-      ["הכול", "הכול"], ["מעיין", "מעיינות"], ["תצפית", "תצפיות"],
+      ["הכול", "הכול"], ["מעיין", "מעיינות"], ["תצפית", "תצפיות"], ["חוף ים", "חופים"],
       ["מסלול", "מסלולים"], ["נחל", "נחלים"], ["אחר", "אחר"]
     ];
     const VISITED_OPTIONS = [
@@ -163,7 +164,7 @@
       ].filter(Boolean).join("  ·  ");
 
       return `
-        ${p.image ? `<img class="p-img" src="/static/uploads/${p.image}">` : ""}
+        ${galleryHtml(p.gallery)}
         <div class="p-body">
           <span class="p-type ${classOf(p)}">${iconOf(p)}${typeOf(p)}</span>
           <h3>${p.name}</h3>
@@ -179,11 +180,49 @@
         </div>`;
     }
 
+    // ---------- גלריה בחלון: כמה תמונות וסרטונים, מחליקים ביניהם ----------
+    function galleryHtml(items) {
+      if (!items.length) return "";
+      const slides = items.map(m => m.kind === "video"
+        ? `<video src="/static/uploads/${m.filename}" controls playsinline preload="metadata"></video>`
+        : `<img src="/static/uploads/${m.filename}" alt="">`).join("");
+      if (items.length === 1) return `<div class="gal"><div class="gal-track">${slides}</div></div>`;
+      return `
+        <div class="gal">
+          <div class="gal-track">${slides}</div>
+          <button class="gal-btn gal-prev" aria-label="הקודם">›</button>
+          <button class="gal-btn gal-next" aria-label="הבא">‹</button>
+          <div class="gal-dots">${items.map((m, i) => `<span class="${i === 0 ? "on" : ""}"></span>`).join("")}</div>
+          <div class="gal-count">1 / ${items.length}</div>
+        </div>`;
+    }
+
+    // כשנפתח חלון - מחברים את החיצים, הנקודות והמונה של הגלריה שבו
+    map.on("popupopen", e => {
+      const gal = e.popup.getElement().querySelector(".gal");
+      if (!gal || !gal.querySelector(".gal-btn")) return;
+      const track = gal.querySelector(".gal-track");
+      const dots = gal.querySelectorAll(".gal-dots span");
+      const count = gal.querySelector(".gal-count");
+      const total = track.children.length;
+      // בעברית (RTL) הגלילה הצידה נספרת במספרים שליליים, ולכן Math.abs ו-"-"
+      const current = () => Math.round(Math.abs(track.scrollLeft) / track.clientWidth);
+      const goTo = i => track.scrollTo({ left: -Math.max(0, Math.min(total - 1, i)) * track.clientWidth, behavior: "smooth" });
+
+      gal.querySelector(".gal-next").onclick = () => goTo(current() + 1);
+      gal.querySelector(".gal-prev").onclick = () => goTo(current() - 1);
+      track.addEventListener("scroll", () => {
+        const i = current();
+        dots.forEach((d, k) => d.classList.toggle("on", k === i));
+        count.textContent = `${i + 1} / ${total}`;
+      });
+    });
+
     // ---------- סיכה: תמונה בעיגול (או אייקון) + תגית סוג ----------
     function markerIcon(p) {
       const visited = p.visited === "ביקרתי";
-      const inside = p.image
-        ? `<img src="/static/uploads/${p.image}" alt="">`
+      const inside = p.cover
+        ? `<img src="/static/uploads/${p.cover}" alt="">`
         : `<span class="pin-icon ${classOf(p)}">${iconOf(p)}</span>`;
 
       return L.divIcon({
@@ -220,7 +259,7 @@
       const markerById = {};
       shown.forEach(p => {
         markerById[p.id] = L.marker([p.lat, p.lng], { icon: markerIcon(p) })
-          .bindPopup(popupHtml(p), { minWidth: 290, maxWidth: 290 })
+          .bindPopup(popupHtml(p), { minWidth: 290, maxWidth: 290, autoPanPaddingTopLeft: [20, 140], autoPanPaddingBottomRight: [20, 20] })
           .addTo(markersLayer);
       });
 

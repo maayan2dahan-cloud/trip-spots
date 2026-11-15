@@ -18,7 +18,7 @@
   <form class="form-card" method="POST" enctype="multipart/form-data">
     <h2>{% if editing %}עריכת מקום{% else %}מקום חדש{% endif %}</h2>
     <p class="form-sub">
-      {% if editing %}עדכני פרטים או הוסיפי תמונה{% else %}שמרי מקום שמצאת, כדי שיחכה לך לטיול הבא{% endif %}
+      {% if editing %}עדכני פרטים או הוסיפי תמונות{% else %}שמרי מקום שמצאת, כדי שיחכה לך לטיול הבא{% endif %}
     </p>
 
     {% if error %}<div class="error">{{ error }}</div>{% endif %}
@@ -60,12 +60,27 @@
     </div>
 
     <div class="field">
-      <label>תמונה</label>
-      {% if place.image %}
-        <img class="current-img" src="/static/uploads/{{ place.image }}">
-        <div class="hint">אפשר לבחור תמונה חדשה כדי להחליף את הקיימת</div>
+      <label>תמונות וסרטונים של המקום</label>
+      {% if place_media %}
+        <div class="media-thumbs">
+          {% for m in place_media %}
+            <label class="t" title="לחיצה מסמנת למחיקה">
+              {% if m.kind == "video" %}
+                <video src="/static/uploads/{{ m.filename }}#t=0.1" muted preload="metadata"></video>
+                <span class="vid">וידאו</span>
+              {% else %}
+                <img src="/static/uploads/{{ m.filename }}">
+              {% endif %}
+              {% if loop.first and m.kind == "image" %}<span class="cover-badge">ראשית</span>{% endif %}
+              <input type="checkbox" name="remove_media" value="{{ m.id }}">
+              <span class="rm">✕</span>
+            </label>
+          {% endfor %}
+        </div>
+        <div class="hint">לחיצה על ✕ מסמנת קובץ למחיקה. הוא יימחק כשתשמרי.</div>
       {% endif %}
-      <input name="image" type="file" accept="image/*">
+      <input name="media_place" type="file" accept="image/*,video/*" multiple>
+      <div class="hint">אפשר לבחור כמה תמונות וסרטונים ביחד. התמונה הראשונה ("ראשית") מופיעה בסיכה במפה.</div>
     </div>
 
     <div class="field">
@@ -110,9 +125,9 @@
 
       <div class="field">
         <label>תמונות וסרטונים של הדרך</label>
-        {% if media %}
+        {% if dir_media %}
           <div class="media-thumbs">
-            {% for m in media %}
+            {% for m in dir_media %}
               <label class="t" title="לחיצה מסמנת למחיקה">
                 {% if m.kind == "video" %}
                   <video src="/static/uploads/{{ m.filename }}#t=0.1" muted preload="metadata"></video>
@@ -127,7 +142,7 @@
           </div>
           <div class="hint">לחיצה על ✕ מסמנת קובץ למחיקה. הוא יימחק כשתשמרי.</div>
         {% endif %}
-        <input name="media" type="file" accept="image/*,video/*" multiple>
+        <input name="media_directions" type="file" accept="image/*,video/*" multiple>
         <div class="hint">אפשר לבחור כמה קבצים ביחד (תמונות וסרטונים)</div>
       </div>
     </div>

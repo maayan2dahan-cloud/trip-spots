@@ -12,8 +12,9 @@
   --lilac-line: #ece5f4;
 
   /* צבע עדין לכל סוג: רקע התגית + צבע האייקון */
-  --spring-bg: #f1f8fd; --spring: #8dbbdc;   /* מעיין */
-  --view-bg:   #fef6ef; --view:   #efb98c;   /* תצפית */
+  --spring-bg: #e4f1fb; --spring: #93c3e6;   /* מעיין - תכלת פסטל */
+  --view-bg:   #fde9db; --view:   #f4b48a;   /* תצפית - אפרסק פסטל */
+  --beach-bg:  #efe4d8; --beach:  #b8957a;   /* חוף ים - חום פסטל */
   --trail-bg:  #f4f7f1; --trail:  #a7c096;   /* מסלול */
   --stream-bg: #f0f9f7; --stream: #86c3b8;   /* נחל */
   --other-bg:  #f6f6f4; --other:  #b5b5b0;   /* אחר */
@@ -71,6 +72,7 @@ button { font-family: inherit; }
 .t-trail  { --bg: var(--trail-bg);  --c: var(--trail); }
 .t-stream { --bg: var(--stream-bg); --c: var(--stream); }
 .t-other  { --bg: var(--other-bg);  --c: var(--other); }
+.t-beach  { --bg: var(--beach-bg);  --c: var(--beach); }
 
 /* ---------- סיכות: תמונה בעיגול + תגית סוג ---------- */
 .pin { position: relative; width: 54px; height: 54px; transition: transform .2s; }
@@ -80,7 +82,8 @@ button { font-family: inherit; }
   border: 3px solid white; box-shadow: 0 0 0 1px var(--ink), 0 6px 16px rgba(0, 0, 0, .18);
   display: flex; align-items: center; justify-content: center;
 }
-.pin-circle img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* ".leaflet-container" כדי לגבור על כלל של Leaflet שהופך תמונות בסיכות ל"רוחב אוטומטי" */
+.leaflet-container .pin-circle img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .pin-icon svg { width: 22px; height: 22px; color: var(--c); display: block; }
 .pin-label {
   position: absolute; top: 50px; left: 50%; transform: translateX(-50%);
@@ -109,7 +112,29 @@ button { font-family: inherit; }
   top: 8px; right: 8px; width: 26px; height: 26px; border-radius: 50%;
   background: rgba(255, 255, 255, .9); color: var(--ink); line-height: 24px; text-align: center; z-index: 2;
 }
-.p-img { width: 100%; height: 170px; object-fit: cover; display: block; }
+/* גלריה בחלון */
+.gal { position: relative; }
+.gal-track { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
+.gal-track::-webkit-scrollbar { display: none; }
+.leaflet-container .gal-track > img,
+.gal-track > video {
+  flex: 0 0 100%; width: 100%; height: 190px; object-fit: cover; display: block;
+  scroll-snap-align: center; background: #111;
+}
+.gal-btn {
+  position: absolute; top: 50%; transform: translateY(-50%); width: 28px; height: 28px;
+  border-radius: 50%; border: none; background: rgba(255, 255, 255, .9); font-size: 16px;
+  line-height: 28px; text-align: center; cursor: pointer; padding: 0;
+}
+.gal-prev { right: 10px; }
+.gal-next { left: 10px; }
+.gal-dots { position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); display: flex; gap: 5px; pointer-events: none; }
+.gal-dots span { width: 6px; height: 6px; border-radius: 50%; background: rgba(255, 255, 255, .55); }
+.gal-dots span.on { background: white; }
+.gal-count {
+  position: absolute; bottom: 10px; left: 10px; background: rgba(0, 0, 0, .55); color: white;
+  font-size: 11.5px; padding: 2px 8px; border-radius: 999px; letter-spacing: .05em; pointer-events: none;
+}
 .p-body { padding: 16px 20px 20px; }
 .p-type {
   display: inline-flex; align-items: center; gap: 5px; padding: 1px 10px; border-radius: 999px;
@@ -200,6 +225,7 @@ button { font-family: inherit; }
   position: absolute; top: 4px; left: 4px; width: 22px; height: 22px; border-radius: 50%;
   background: rgba(255, 255, 255, .95); font-size: 12px; display: flex; align-items: center; justify-content: center;
 }
+.media-thumbs .cover-badge { position: absolute; bottom: 4px; right: 4px; font-size: 10px; background: var(--ink); color: white; padding: 1px 6px; }
 .media-thumbs .vid { position: absolute; bottom: 4px; right: 4px; font-size: 10px; background: rgba(0, 0, 0, .6); color: white; padding: 1px 5px; }
 .media-thumbs .t:has(input:checked) img,
 .media-thumbs .t:has(input:checked) video { opacity: .3; }

@@ -12,8 +12,13 @@ IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
 VIDEO_EXTENSIONS = {".mp4", ".mov", ".webm", ".m4v"}
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-TYPES = ["מעיין", "תצפית", "מסלול", "נחל", "אחר"]
+TYPES = ["מעיין", "תצפית", "חוף ים", "מסלול", "נחל", "אחר"]
 LOCATION_ERROR = "לא הצלחתי למצוא קואורדינטות. נסי להדביק את המספרים מגוגל מפות (קליק ימני על המקום)."
+
+# שני סוגים של קבצים לכל מקום:
+#   "place"      - הגלריה של המקום (בחלון במפה). התמונה הראשונה בה מופיעה בסיכה.
+#   "directions" - תמונות וסרטונים של הדרך (בדף הוראות הגעה)
+SECTIONS = {"place": "media_place", "directions": "media_directions"}   # סוג -> שם השדה בטופס
 
 
 # ---------- פונקציות עזר ----------
@@ -23,27 +28,38 @@ def get_db():
     conn.row_factory = sqlite3.Row
     return conn
 
+# תת-שאילתות שמוסיפות לכל מקום: התמונה הראשית, וכמה קבצים יש בהוראות ההגעה
+EXTRA_COLUMNS = """
+    (SELECT filename FROM media
+     WHERE media.place_id = places.id AND section = 'place' AND kind = 'image'
+     ORDER BY id LIMIT 1) AS cover,
+    (SELECT COUNT(*) FROM media
+     WHERE media.place_id = places.id AND section = 'directions') AS media_count
+"""
+
 def get_places():
-    """כל המקומות, וגם כמה תמונות/סרטונים של הדרך יש לכל אחד"""
+    """כל המקומות, כל אחד עם התמונה הראשית והגלריה שלו"""
     conn = get_db()
-    rows = conn.execute("""
-        SELECT places.*,
-               (SELECT COUNT(*) FROM media WHERE media.place_id = places.id) AS media_count
-        FROM places
-    """).fetchall()
+    places = [dict(row) for row in conn.execute(f"SELECT places.*, {EXTRA_COLUMNS} FROM places")]
+    gallery = {}
+    for row in conn.execute("SELECT place_id, filename, kind FROM media WHERE section = 'place' ORDER BY id"):
+        gallery.setdefault(row["place_id"], []).append({"filename": row["filename"], "kind": row["kind"]})
     conn.close()
-    return [dict(row) for row in rows]
+    for p in places:
+        p["gallery"] = gallery.get(p["id"], [])
+    return places
 
 def get_place(place_id):
     conn = get_db()
-    row = conn.execute("SELECT * FROM places WHERE id = ?", (place_id,)).fetchone()
+    row = conn.execute(f"SELECT places.*, {EXTRA_COLUMNS} FROM places WHERE id = ?", (place_id,)).fetchone()
     conn.close()
     return dict(row) if row else None
 
-def get_media(place_id):
-    """התמונות והסרטונים של הדרך למקום מסוים"""
+def get_media(place_id, section):
+    """הקבצים של מקום מסוים, מסוג מסוים ("place" או "directions")"""
     conn = get_db()
-    rows = conn.execute("SELECT * FROM media WHERE place_id = ? ORDER BY id", (place_id,)).fetchall()
+    rows = conn.execute("SELECT * FROM media WHERE place_id = ? AND section = ? ORDER BY id",
+                        (place_id, section)).fetchall()
     conn.close()
     return [dict(row) for row in rows]
 
@@ -84,20 +100,19 @@ def save_upload(file):
 
 def check_uploads():
     """בודקת את כל הקבצים שהועלו לפני ששומרים משהו. מחזירה שגיאה או None"""
-    image = request.files.get("image")
-    if image and image.filename and file_kind(image.filename) != "image":
-        return "התמונה הראשית חייבת להיות תמונה (jpg, png, webp, gif)."
-    for f in request.files.getlist("media"):
-        if f and f.filename and file_kind(f.filename) is None:
-            return f"הקובץ {f.filename} לא נתמך. אפשר להעלות תמונות או סרטונים (mp4, mov, webm)."
+    for field in SECTIONS.values():
+        for f in request.files.getlist(field):
+            if f and f.filename and file_kind(f.filename) is None:
+                return f"הקובץ {f.filename} לא נתמך. אפשר להעלות תמונות או סרטונים (mp4, mov, webm)."
     return None
 
 def save_media_files(conn, place_id):
-    """שומרת את כל התמונות והסרטונים של הדרך שהועלו, ומקשרת אותם למקום"""
-    for f in request.files.getlist("media"):
-        if f and f.filename:
-            conn.execute("INSERT INTO media (place_id, filename, kind) VALUES (?, ?, ?)",
-                         (place_id, save_upload(f), file_kind(f.filename)))
+    """שומרת את כל הקבצים שהועלו (של המקום ושל הדרך) ומקשרת אותם למקום"""
+    for section, field in SECTIONS.items():
+        for f in request.files.getlist(field):
+            if f and f.filename:
+                conn.execute("INSERT INTO media (place_id, filename, kind, section) VALUES (?, ?, ?, ?)",
+                             (place_id, save_upload(f), file_kind(f.filename), section))
 
 def read_form():
     """קוראת את שדות הטופס. מחזירה (מילון עם הנתונים, שגיאה)"""
@@ -123,6 +138,12 @@ def read_form():
     }
     return data, None
 
+def form_page(place, error=None, editing=False, place_id=None):
+    """מציגה את טופס ההוספה/העריכה"""
+    return render_template("add.html", place=place, types=TYPES, error=error, editing=editing,
+                           place_media=get_media(place_id, "place") if place_id else [],
+                           dir_media=get_media(place_id, "directions") if place_id else [])
+
 
 # ---------- דפים ----------
 
@@ -136,25 +157,21 @@ def add_place():
     if request.method == "POST":
         data, error = read_form()
         if error:
-            # מחזירים את הטופס עם מה שכבר הוקלד
-            return render_template("add.html", error=error, place=request.form, types=TYPES, media=[])
-
-        image = request.files.get("image")
-        data["image"] = save_upload(image) if image and image.filename else None
+            return form_page(request.form, error)   # מחזירים את הטופס עם מה שכבר הוקלד
 
         conn = get_db()
         cur = conn.execute("""
             INSERT INTO places (name, type, lat, lng, description, instagram,
-                                parking, crowded, walk_minutes, image, visited, directions)
+                                parking, crowded, walk_minutes, visited, directions)
             VALUES (:name, :type, :lat, :lng, :description, :instagram,
-                    :parking, :crowded, :walk_minutes, :image, :visited, :directions)
+                    :parking, :crowded, :walk_minutes, :visited, :directions)
         """, data)
         save_media_files(conn, cur.lastrowid)   # lastrowid = ה-id של המקום החדש
         conn.commit()
         conn.close()
         return redirect(url_for("home"))
 
-    return render_template("add.html", place={}, types=TYPES, media=[])
+    return form_page({})
 
 
 @app.route("/edit/<int:place_id>", methods=["GET", "POST"])
@@ -166,18 +183,7 @@ def edit_place(place_id):
     if request.method == "POST":
         data, error = read_form()
         if error:
-            form = dict(request.form)
-            form["image"] = place["image"]
-            return render_template("add.html", error=error, place=form, types=TYPES,
-                                   editing=True, media=get_media(place_id))
-
-        # תמונה ראשית חדשה? מוחקים את הישנה
-        image = request.files.get("image")
-        if image and image.filename:
-            delete_file(place["image"])
-            data["image"] = save_upload(image)
-        else:
-            data["image"] = place["image"]
+            return form_page(request.form, error, editing=True, place_id=place_id)
         data["id"] = place_id
 
         conn = get_db()
@@ -186,7 +192,7 @@ def edit_place(place_id):
             SET name = :name, type = :type, lat = :lat, lng = :lng,
                 description = :description, instagram = :instagram,
                 parking = :parking, crowded = :crowded,
-                walk_minutes = :walk_minutes, image = :image, visited = :visited,
+                walk_minutes = :walk_minutes, visited = :visited,
                 directions = :directions
             WHERE id = :id
         """, data)
@@ -205,7 +211,7 @@ def edit_place(place_id):
         return redirect(url_for("home"))
 
     place["location"] = f"{place['lat']}, {place['lng']}"
-    return render_template("add.html", place=place, types=TYPES, editing=True, media=get_media(place_id))
+    return form_page(place, editing=True, place_id=place_id)
 
 
 @app.route("/directions/<int:place_id>")
@@ -213,7 +219,7 @@ def directions(place_id):
     place = get_place(place_id)
     if place is None:
         return "המקום לא נמצא", 404
-    return render_template("directions.html", place=place, media=get_media(place_id))
+    return render_template("directions.html", place=place, media=get_media(place_id, "directions"))
 
 
 @app.route("/delete/<int:place_id>", methods=["POST"])
@@ -223,7 +229,7 @@ def delete_place(place_id):
         return "המקום לא נמצא", 404
 
     conn = get_db()
-    # מוחקים את כל הקבצים: התמונה הראשית + התמונות והסרטונים של הדרך
+    # מוחקים את כל הקבצים של המקום (הגלריה + הדרך), ואת התמונה הישנה אם נשארה
     delete_file(place["image"])
     for row in conn.execute("SELECT filename FROM media WHERE place_id = ?", (place_id,)).fetchall():
         delete_file(row["filename"])
@@ -235,4 +241,4 @@ def delete_place(place_id):
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, host="0.0.0.0")

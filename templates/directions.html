@@ -15,19 +15,20 @@
     <a class="logo" href="/">MAAYAN'S MAP<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M7 29C10.5 21.5 15.5 13.5 25.5 4.5"/><path d="M10.4 21.2Q8.3 17.0 3.6 17.2Q5.7 21.4 10.4 21.2Z"/><path d="M10.4 21.2Q12.9 24.2 16.6 23.2Q14.1 20.2 10.4 21.2Z"/><path d="M14.8 14.6Q13.5 9.8 8.6 9.0Q9.9 13.8 14.8 14.6Z"/><path d="M14.8 14.6Q17.5 17.9 21.6 16.8Q18.9 13.5 14.8 14.6Z"/><path d="M20.2 8.6Q20.3 4.4 16.6 2.6Q16.5 6.8 20.2 8.6Z"/><path d="M20.2 8.6Q23.1 11.8 27.2 10.6Q24.3 7.4 20.2 8.6Z"/><path d="M24.4 5.6Q27.6 5.1 28.6 2.0Q25.4 2.5 24.4 5.6Z"/></svg></a>
   </header>
 
-  {% set type_class = {"מעיין": "t-spring", "תצפית": "t-view", "מסלול": "t-trail", "נחל": "t-stream"}.get(place.type, "t-other") %}
+  {% set type_class = {"מעיין": "t-spring", "תצפית": "t-view", "חוף ים": "t-beach", "מסלול": "t-trail", "נחל": "t-stream"}.get(place.type, "t-other") %}
   {% set icons = {
     "מעיין": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3c3.5 4.5 6 7.6 6 11a6 6 0 0 1-12 0c0-3.4 2.5-6.5 6-11z"/></svg>',
     "תצפית": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 18h18M7 18a5 5 0 0 1 10 0M12 7V4M5.6 10.6 3.8 8.8M18.4 10.6l1.8-1.8"/></svg>',
     "מסלול": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 20l6-10 4 6 3-4 5 8z"/></svg>',
+    "חוף ים": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 11a8 8 0 0 1 16 0z"/><path d="M12 11v8"/><path d="M3 20c2-1.3 4-1.3 6 0s4 1.3 6 0 4-1.3 6 0"/></svg>',
     "נחל": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9c3-2 5 2 9 0s6-2 9 0M3 15c3-2 5 2 9 0s6-2 9 0"/></svg>'
   } %}
   {% set pin_icon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s7-6.2 7-11a7 7 0 0 0-14 0c0 4.8 7 11 7 11z"/><circle cx="12" cy="10" r="2.2"/></svg>' %}
 
   <main class="dir-wrap">
     <div class="dir-card">
-      {% if place.image %}
-        <img class="dir-hero" src="/static/uploads/{{ place.image }}" alt="">
+      {% if place.cover %}
+        <img class="dir-hero" src="/static/uploads/{{ place.cover }}" alt="">
       {% endif %}
 
       <div class="dir-body">
